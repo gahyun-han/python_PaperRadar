@@ -152,8 +152,16 @@ else:
     if errors:
         print(f"⚠️  Zotero 오류: {errors}")
 
+    # NotebookLM에 소스 추가
+    from notebooklm_client import add_papers_to_notebooklm
+    nlm_added, nlm_errors = add_papers_to_notebooklm(to_send)
+    if nlm_added:
+        print(f"📓 NotebookLM에 {nlm_added}편 소스 추가 완료.")
+    if nlm_errors:
+        print(f"⚠️  NotebookLM 오류: {nlm_errors}")
+
     # Jarvis execution_log에 결과 기록 (cross-project 직접 파일 쓰기)
-    log_to_jarvis(success=True, papers_sent=len(to_send), zotero_added=added, errors=errors)
+    log_to_jarvis(success=True, papers_sent=len(to_send), zotero_added=added, errors=errors + nlm_errors)
 
     # Landscape 갱신
     _update_landscape()

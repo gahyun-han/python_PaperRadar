@@ -1,0 +1,66 @@
+"""
+NotebookLM 연동 클라이언트.
+PaperRadar에서 수집한 논문 URL을 NotebookLM 노트북에 소스로 자동 추가.
+
+사전 조건 (최초 1회):
+    notebooklm login   ← Google 계정 브라우저 로그인
+"""
+import asyncio
+import logging
+from datetime import datetime
+
+logger = logging.getLogger(__name__)
+
+NOTEBOOK_TITLE = "PaperRadar — AI/DT 논문"
+
+
+async def _add_papers(papers: list[dict]) -> tuple[int, list[str]]:
+    try:
+        from notebooklm import NotebookLMClient
+        from notebooklm.exceptions import NotebookLMError, AuthError
+    except ImportError:
+        return 0, ["notebooklm-py 미설치: pip install 'notebooklm-py[browser]'"]
+
+    added = 0
+    errors = []
+
+    try:
+        async with NotebookLMClient.from_storage() as client:
+            # 기존 노트북 찾거나 신규 생성
+            notebooks = await client.notebooks.list()
+            notebook = next((nb for nb in notebooks if nb.title == NOTEBOOK_TITLE), None)
+            if notebook is None:
+                notebook = await client.notebooks.create(title=NOTEBOOK_TITLE)
+                logger.info(f"NotebookLM 노트북 생성: {NOTEBOOK_TITLE}")
+            else:
+                logger.info(f"NotebookLM 기존 노트북 사용: {notebook.id}")
+
+            for paper in papers:
+                url = paper.get("link", "")
+                if not url:
+                    continue
+                try:
+                    await client.sources.add_url(
+                        notebook_id=notebook.id,
+                        url=url,
+                        wait=False,
+                    )
+                    added += 1
+                    logger.info(f"소스 추가: {paper['title'][:60]}")
+                except NotebookLMError as e:
+                    errors.append(f"{paper['title'][:40]}: {e}")
+
+    except AuthError:
+        return 0, ["NotebookLM 인증 필요: 터미널에서 'notebooklm login' 실행 후 재시도"]
+    except Exception as e:
+        return 0, [f"NotebookLM 연결 실패: {e}"]
+
+    return added, errors
+
+
+def add_papers_to_notebooklm(papers: list[dict]) -> tuple[int, list[str]]:
+    """동기 진입점 — main.py에서 직접 호출."""
+    try:
+        return asyncio.run(_add_papers(papers))
+    except Exception as e:
+        return 0, [str(e)]
