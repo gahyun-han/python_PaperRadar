@@ -1,0 +1,15 @@
+config.py
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+.DS_Store
+*.log
+outputs/
+sent_history.json
+backfill_result.json
+backfill_progress.log
+retag_nohup.log
+retag_progress.log
+sync_only.log
+paper_radar.log
