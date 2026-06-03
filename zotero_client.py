@@ -112,16 +112,17 @@ class ZoteroClient:
             logger.error(f"Zotero init error: {e}")
             self._zot = None
 
-    def add_papers(self, papers: list[dict]) -> tuple[int, list[str]]:
+    def add_papers(self, papers: list[dict]) -> tuple[int, list[str], list[str]]:
         """
         Add papers to Zotero library with PDF attachments.
-        Returns (added_count, error_messages).
+        Returns (added_count, error_messages, zotero_item_keys).
         """
         if not self._zot or not papers:
-            return 0, []
+            return 0, [], []
 
         errors = []
         added = 0
+        item_keys: list[str] = []
 
         for paper in papers:
             arxiv_id = paper.get("arxiv_id", "")
@@ -136,6 +137,7 @@ class ZoteroClient:
                     continue
                 item_key = list(successful.values())[0]["key"]
                 added += 1
+                item_keys.append(item_key)
 
                 # 2) PDF 다운로드 → linked_file 첨부
                 pdf_path = _download_pdf(arxiv_id)
@@ -149,7 +151,7 @@ class ZoteroClient:
                 logger.error(f"Zotero add error for {arxiv_id}: {e}")
                 errors.append(str(e))
 
-        return added, errors
+        return added, errors, item_keys
 
 
 def _chunks(lst: list, n: int):

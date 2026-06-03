@@ -146,11 +146,25 @@ else:
 
     # Zotero에 자동 추가
     zot = ZoteroClient()
-    added, errors = zot.add_papers(to_send)
+    added, errors, zot_keys = zot.add_papers(to_send)
     if added:
         print(f"📚 Zotero에 {added}편 추가 완료.")
     if errors:
         print(f"⚠️  Zotero 오류: {errors}")
+
+    # Zotero 컬렉션 자동 분류 (신규 논문만)
+    if zot_keys:
+        try:
+            import sys as _sys
+            if str(JARVIS_PATH) not in _sys.path:
+                _sys.path.insert(0, str(JARVIS_PATH))
+            from dotenv import load_dotenv as _ld
+            _ld(JARVIS_PATH / ".env")
+            from agents.paper.zotero_obsidian_client import ZoteroObsidianClient
+            sync_result = ZoteroObsidianClient().sync_items_collections(zot_keys)
+            print(sync_result)
+        except Exception as e:
+            print(f"⚠️  컬렉션 동기화 오류: {e}")
 
     # NotebookLM에 소스 추가
     from notebooklm_client import add_papers_to_notebooklm
