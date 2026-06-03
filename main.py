@@ -101,11 +101,20 @@ else:
     to_send = new_selected[:5]
     message = "📄 AI/DT 논문 브리핑\n\n"
     for idx, paper in enumerate(to_send, start=1):
-        tags_str = "  ".join(paper.get("tags", [])) or "—"
+        # 태그를 group별로 묶어 포맷
+        groups: dict[str, list[str]] = {}
+        for tag in paper.get("tags", []):
+            if ":" in tag:
+                grp, val = tag.split(":", 1)
+                groups.setdefault(grp, []).append(val)
+        if groups:
+            tag_lines = "\n".join(f"🏷 {grp} : {', '.join(vals)}" for grp, vals in groups.items())
+        else:
+            tag_lines = "🏷 —"
         message += (
             f"{idx}. {paper['title']}\n"
             f"⭐ score: {paper['score']}\n"
-            f"🏷 {tags_str}\n"
+            f"{tag_lines}\n"
             f"{paper['link']}\n\n"
         )
     print(message)
