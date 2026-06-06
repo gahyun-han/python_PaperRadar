@@ -238,9 +238,9 @@ def main():
             sys.path.insert(0, JARVIS)
         os.environ.setdefault("ZOTERO_API_KEY", "v5ATjSK5LAYMNuZ2CdkmUQVr")
         os.environ.setdefault("ZOTERO_USER_ID", "20683965")
-        from agents.paper.zotero_obsidian_client import ZoteroObsidianClient
+        from agents.paper.zotero_client import ZoteroClient
         from agents.paper.landscape_builder import build_landscape, save_landscape
-        client = ZoteroObsidianClient()
+        client = ZoteroClient()
         sync_result = client.sync_collections_from_tags()
         log(sync_result)
         data = build_landscape(client.zot)

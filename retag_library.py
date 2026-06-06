@@ -97,8 +97,8 @@ def main():
         from dotenv import load_dotenv
         load_dotenv(Path(JARVIS_PATH) / ".env")
 
-        from agents.paper.zotero_obsidian_client import ZoteroObsidianClient
-        client = ZoteroObsidianClient()
+        from agents.paper.zotero_client import ZoteroClient
+        client = ZoteroClient()
         result = client.sync_collections_from_tags()
         log(result)
     except Exception as e:

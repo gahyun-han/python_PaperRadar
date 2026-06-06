@@ -25,8 +25,8 @@ def _update_landscape():
         from dotenv import load_dotenv as _load
         _load(JARVIS_PATH / ".env")
         from agents.paper.landscape_builder import build_landscape, save_landscape
-        from agents.paper.zotero_obsidian_client import ZoteroObsidianClient
-        client = ZoteroObsidianClient()
+        from agents.paper.zotero_client import ZoteroClient
+        client = ZoteroClient()
         if client.zot:
             data = build_landscape(client.zot)
             path = save_landscape(data)
@@ -160,8 +160,8 @@ else:
                 _sys.path.insert(0, str(JARVIS_PATH))
             from dotenv import load_dotenv as _ld
             _ld(JARVIS_PATH / ".env")
-            from agents.paper.zotero_obsidian_client import ZoteroObsidianClient
-            sync_result = ZoteroObsidianClient().sync_items_collections(zot_keys)
+            from agents.paper.zotero_client import ZoteroClient
+            sync_result = ZoteroClient().sync_items_collections(zot_keys)
             print(sync_result)
         except Exception as e:
             print(f"⚠️  컬렉션 동기화 오류: {e}")
