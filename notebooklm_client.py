@@ -14,6 +14,13 @@ logger = logging.getLogger(__name__)
 NOTEBOOK_TITLE = "PaperRadar — AI/DT 논문"
 
 
+NOTEBOOK_LIMIT = 50
+
+
+def _notebook_title(base: str, idx: int) -> str:
+    return base if idx == 0 else f"{base} ({idx + 1})"
+
+
 async def _add_papers(papers: list[dict]) -> tuple[int, list[str]]:
     try:
         from notebooklm import NotebookLMClient
@@ -21,34 +28,37 @@ async def _add_papers(papers: list[dict]) -> tuple[int, list[str]]:
     except ImportError:
         return 0, ["notebooklm-py 미설치: pip install 'notebooklm-py[browser]'"]
 
+    chunks = [papers[i:i + NOTEBOOK_LIMIT] for i in range(0, len(papers), NOTEBOOK_LIMIT)]
     added = 0
     errors = []
 
     try:
         async with NotebookLMClient.from_storage() as client:
-            # 기존 노트북 찾거나 신규 생성
-            notebooks = await client.notebooks.list()
-            notebook = next((nb for nb in notebooks if nb.title == NOTEBOOK_TITLE), None)
-            if notebook is None:
-                notebook = await client.notebooks.create(title=NOTEBOOK_TITLE)
-                logger.info(f"NotebookLM 노트북 생성: {NOTEBOOK_TITLE}")
-            else:
-                logger.info(f"NotebookLM 기존 노트북 사용: {notebook.id}")
+            for chunk_idx, chunk in enumerate(chunks):
+                title = _notebook_title(NOTEBOOK_TITLE, chunk_idx)
 
-            for paper in papers:
-                url = paper.get("link", "")
-                if not url:
-                    continue
-                try:
-                    await client.sources.add_url(
-                        notebook_id=notebook.id,
-                        url=url,
-                        wait=False,
-                    )
-                    added += 1
-                    logger.info(f"소스 추가: {paper['title'][:60]}")
-                except NotebookLMError as e:
-                    errors.append(f"{paper['title'][:40]}: {e}")
+                notebooks = await client.notebooks.list()
+                notebook = next((nb for nb in notebooks if nb.title == title), None)
+                if notebook is None:
+                    notebook = await client.notebooks.create(title=title)
+                    logger.info(f"NotebookLM 노트북 생성: {title}")
+                else:
+                    logger.info(f"NotebookLM 기존 노트북 사용: {title} (id={notebook.id})")
+
+                for paper in chunk:
+                    url = paper.get("link", "")
+                    if not url:
+                        continue
+                    try:
+                        await client.sources.add_url(
+                            notebook_id=notebook.id,
+                            url=url,
+                            wait=False,
+                        )
+                        added += 1
+                        logger.info(f"소스 추가: {paper['title'][:60]}")
+                    except NotebookLMError as e:
+                        errors.append(f"{paper['title'][:40]}: {e}")
 
     except AuthError:
         return 0, ["NotebookLM 인증 필요: 터미널에서 'notebooklm login' 실행 후 재시도"]
